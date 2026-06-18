@@ -1,0 +1,137 @@
+import { Module } from '../types';
+
+export const tsRealWorld: Module = {
+  id: 'ts-m4',
+  title: 'Real-World TypeScript',
+  description: 'Narrowing, null safety, error handling, and async — the patterns you ship.',
+  lessons: [
+    {
+      id: 'ts-l7',
+      title: 'Narrowing & Null Safety',
+      summary: 'Turn "maybe undefined" into "definitely there" with guards.',
+      estimatedMinutes: 14,
+      concepts: ['ts-narrowing', 'ts-types'],
+      content: [
+        { kind: 'paragraph', text: 'Real data is messy: values can be missing. TypeScript models this with `undefined`/`null` and unions, then forces you to *narrow* — prove a value is present — before using it. This eliminates the #1 source of runtime crashes.' },
+        { kind: 'code', language: 'typescript', code: 'function shout(text: string | undefined): string {\n  if (text === undefined) {\n    return "(nothing)";\n  }\n  // Here TypeScript knows text is a string.\n  return text.toUpperCase();\n}' },
+        { kind: 'heading', text: 'typeof and truthiness guards' },
+        { kind: 'code', language: 'typescript', code: 'function describe(x: string | number): string {\n  if (typeof x === "number") {\n    return `number ${x.toFixed(1)}`; // x is number here\n  }\n  return `string of length ${x.length}`; // x is string here\n}' },
+        { kind: 'heading', text: 'Optional chaining & nullish coalescing' },
+        { kind: 'paragraph', text: '`?.` short-circuits to `undefined` if the left side is null/undefined. `??` supplies a fallback only for null/undefined (unlike `||`, which also triggers on 0 or "").' },
+        { kind: 'code', language: 'typescript', code: 'interface Config { theme?: { color?: string } }\nfunction color(cfg: Config): string {\n  return cfg.theme?.color ?? "default";\n}\ncolor({});                       // "default"\ncolor({ theme: { color: "red" }}); // "red"' },
+        { kind: 'callout', tone: 'pitfall', title: '?? vs ||', text: '`count || 10` returns 10 when count is 0 — usually a bug. `count ?? 10` keeps 0 and only falls back on null/undefined.' },
+      ],
+      exercises: [
+        {
+          id: 'ts-e8',
+          title: 'Safe display name',
+          prompt: 'Write `displayName(name: string | undefined): string` that returns the name in upper case, or `"GUEST"` if it is undefined or an empty string. Log `displayName(undefined)` and `displayName("ada")`.',
+          language: 'typescript',
+          starterCode: '// Implement displayName with a GUEST fallback.\n',
+          solution: 'function displayName(name: string | undefined): string {\n  if (!name) return "GUEST";\n  return name.toUpperCase();\n}\nconsole.log(displayName(undefined));\nconsole.log(displayName("ada"));',
+          checks: [
+            { type: 'runExpression', expression: 'displayName(undefined) === "GUEST" && displayName("") === "GUEST"', description: 'Falls back to GUEST for undefined and empty string' },
+            { type: 'runExpression', expression: 'displayName("ada") === "ADA"', description: 'Upper-cases a present name' },
+            { type: 'runOutput', expected: 'GUEST\nADA', description: 'Logs GUEST then ADA', trim: true },
+          ],
+          hints: [
+            { text: 'An empty string is falsy, so `if (!name)` handles both undefined and "".' },
+            { text: 'Use name.toUpperCase() once you know name is present.' },
+          ],
+          concepts: ['ts-narrowing'],
+        },
+      ],
+      quiz: [
+        {
+          id: 'ts-q11',
+          prompt: 'What does `a?.b?.c` evaluate to when `a` is undefined?',
+          options: ['A thrown TypeError', 'undefined', 'null', 'An empty object'],
+          answerIndex: 1,
+          explanation: 'Optional chaining short-circuits: if any link is null/undefined the whole expression is `undefined`, with no error.',
+          concepts: ['ts-narrowing'],
+        },
+        {
+          id: 'ts-q12',
+          prompt: 'Which expression keeps the value 0 instead of replacing it with the fallback?',
+          options: ['count || 5', 'count ?? 5', 'count && 5', 'count == 5'],
+          answerIndex: 1,
+          explanation: '`??` only falls back on null/undefined, so 0 is preserved. `||` would replace 0 because 0 is falsy.',
+          concepts: ['ts-narrowing'],
+        },
+      ],
+    },
+    {
+      id: 'ts-l8',
+      title: 'Errors & Async/Await',
+      summary: 'Throwing and catching errors, and working with Promises the modern way.',
+      estimatedMinutes: 16,
+      concepts: ['ts-errors', 'ts-async'],
+      content: [
+        { kind: 'heading', text: 'Throwing and catching' },
+        { kind: 'paragraph', text: 'Use `throw` for exceptional conditions and `try/catch` to handle them. In TypeScript the caught value is typed `unknown`, so you must narrow it before reading `.message`.' },
+        { kind: 'code', language: 'typescript', code: 'function parsePositive(input: string): number {\n  const n = Number(input);\n  if (Number.isNaN(n)) throw new Error(`Not a number: ${input}`);\n  if (n < 0) throw new RangeError("Must be positive");\n  return n;\n}\n\ntry {\n  parsePositive("-3");\n} catch (err) {\n  if (err instanceof Error) console.log(err.message); // "Must be positive"\n}' },
+        { kind: 'callout', tone: 'tip', text: 'For predictable outcomes (validation), many teams return a result object like `{ ok: false, error }` instead of throwing — it makes the failure part of the type.' },
+        { kind: 'heading', text: 'Promises & async/await' },
+        { kind: 'paragraph', text: 'A `Promise<T>` represents a value that arrives later. `async` functions return Promises; `await` pauses until one resolves, letting you write asynchronous code that reads top-to-bottom.' },
+        { kind: 'code', language: 'typescript', code: 'function delay(ms: number): Promise<void> {\n  return new Promise((resolve) => setTimeout(resolve, ms));\n}\n\nasync function fetchUser(id: number): Promise<string> {\n  await delay(10);              // simulate I/O\n  if (id <= 0) throw new Error("bad id");\n  return `user-${id}`;\n}\n\nasync function main() {\n  try {\n    const name = await fetchUser(7);\n    console.log(name);          // "user-7"\n  } catch (e) {\n    console.log("failed");\n  }\n}' },
+        { kind: 'callout', tone: 'warning', text: 'Forgetting `await` is a classic bug: you get a `Promise` object instead of its value, and errors silently become unhandled rejections.' },
+      ],
+      exercises: [
+        {
+          id: 'ts-e9',
+          title: 'Validate with a Result type',
+          prompt: 'Write `divide(a: number, b: number)` that returns `{ ok: true, value }` normally, or `{ ok: false, error: "divide by zero" }` when b is 0. Log the result of `divide(10, 2)` and `divide(1, 0)` using JSON.stringify.',
+          language: 'typescript',
+          starterCode: '// Return a result object instead of throwing.\n',
+          solution: 'function divide(a: number, b: number) {\n  if (b === 0) return { ok: false, error: "divide by zero" };\n  return { ok: true, value: a / b };\n}\nconsole.log(JSON.stringify(divide(10, 2)));\nconsole.log(JSON.stringify(divide(1, 0)));',
+          checks: [
+            { type: 'runExpression', expression: 'divide(10,2).ok === true && divide(10,2).value === 5', description: 'Returns ok:true with the quotient' },
+            { type: 'runExpression', expression: 'divide(1,0).ok === false && divide(1,0).error === "divide by zero"', description: 'Returns ok:false with an error message on divide-by-zero' },
+            { type: 'runOutput', expected: '{"ok":true,"value":5}\n{"ok":false,"error":"divide by zero"}', description: 'Logs both result objects as JSON', trim: true },
+          ],
+          hints: [
+            { text: 'Check `if (b === 0)` first and return the error object.' },
+            { text: 'Otherwise return { ok: true, value: a / b }.' },
+          ],
+          concepts: ['ts-errors'],
+        },
+        {
+          id: 'ts-e10',
+          title: 'Await a value',
+          prompt: 'Write an async function `double(n: number): Promise<number>` that returns n * 2. Then write `async function run()` that awaits `double(21)` and logs it. Call `run()`.',
+          language: 'typescript',
+          starterCode: '// Implement double() and run(), then call run().\n',
+          solution: 'async function double(n: number): Promise<number> {\n  return n * 2;\n}\nasync function run() {\n  const result = await double(21);\n  console.log(result);\n}\nrun();',
+          checks: [
+            { type: 'regex', pattern: 'async\\s+function\\s+double', description: 'double is an async function' },
+            { type: 'contains', value: 'await', description: 'Uses await to get the value' },
+            { type: 'runOutput', expected: '42', description: 'Logs 42', trim: true },
+          ],
+          hints: [
+            { text: 'An async function automatically wraps its return in a Promise.' },
+            { text: 'Inside run(), use `const result = await double(21);` then log it.' },
+          ],
+          concepts: ['ts-async'],
+        },
+      ],
+      quiz: [
+        {
+          id: 'ts-q13',
+          prompt: 'In TypeScript, what is the type of the variable in `catch (err)`?',
+          options: ['Error', 'any only', 'unknown (you must narrow it)', 'string'],
+          answerIndex: 2,
+          explanation: 'Modern TypeScript types caught errors as `unknown`, forcing a check like `err instanceof Error` before use.',
+          concepts: ['ts-errors'],
+        },
+        {
+          id: 'ts-q14',
+          prompt: 'What does an `async` function always return?',
+          options: ['The raw value', 'A Promise of the value', 'void', 'A callback'],
+          answerIndex: 1,
+          explanation: 'An `async` function wraps its return value in a `Promise`, so callers `await` it or use `.then()`.',
+          concepts: ['ts-async'],
+        },
+      ],
+    },
+  ],
+};

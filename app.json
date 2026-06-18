@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "Coding Learner",
+    "slug": "coding-learner",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "scheme": "codinglearner",
+    "splash": {
+      "backgroundColor": "#0d1117"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.codinglearner.app"
+    },
+    "android": {
+      "package": "com.codinglearner.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#0d1117"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
